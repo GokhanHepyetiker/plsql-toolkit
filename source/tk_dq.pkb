@@ -198,9 +198,11 @@ create or replace package body tk_dq as
   end remove_rule;
 
   procedure set_active (p_rule_name in varchar2, p_active in boolean) is
+    -- BOOLEAN is only a SQL type from 23ai on: convert in PL/SQL for 19c/21c compatibility
+    l_flag varchar2(1) := case when p_active then 'Y' else 'N' end;
   begin
     update tk_dq_rules
-       set is_active = case when p_active then 'Y' else 'N' end
+       set is_active = l_flag
      where rule_name = upper(trim(p_rule_name));
     if sql%rowcount = 0 then
       raise_application_error(-20124, 'Data quality rule ' || p_rule_name || ' does not exist');
