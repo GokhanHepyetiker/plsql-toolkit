@@ -1,0 +1,4 @@
+*.log
+*.lst
+.env
+.vscode/settings.json

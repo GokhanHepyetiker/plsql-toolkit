@@ -1,0 +1,22 @@
+services:
+  oracle:
+    image: ${ORACLE_IMAGE:-gvenzl/oracle-free:23-slim}
+    container_name: plsql-toolkit-db
+    ports:
+      - "${ORACLE_PORT:-1521}:1521"
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_SYS_PASSWORD:-OracleSys#2026}
+      APP_USER: toolkit
+      APP_USER_PASSWORD: toolkit
+      TK_PDB: ${TK_PDB:-FREEPDB1}
+      UTPLSQL_VERSION: ${UTPLSQL_VERSION:-v.3.2.3}
+    volumes:
+      - ./docker/init:/container-entrypoint-initdb.d:ro
+      - ./:/workspace:ro
+    healthcheck:
+      # healthy only after utPLSQL has been installed by the init script
+      test: ["CMD-SHELL", "healthcheck.sh && test -f /tmp/toolkit_ready"]
+      interval: 10s
+      timeout: 10s
+      retries: 90
+      start_period: 30s

@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: utPLSQL on ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Oracle 23ai Free
+            image: gvenzl/oracle-free:23-slim
+            pdb: FREEPDB1
+          - name: Oracle 21c XE
+            image: gvenzl/oracle-xe:21-slim
+            pdb: XEPDB1
+    env:
+      ORACLE_IMAGE: ${{ matrix.image }}
+      TK_PDB: ${{ matrix.pdb }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Start Oracle and install utPLSQL
+        run: docker compose up -d --wait --wait-timeout 900
+
+      - name: Install toolkit and run unit tests
+        run: bash scripts/tk.sh test
+
+      - name: Run examples
+        run: bash scripts/tk.sh examples
+
+      - name: Uninstall
+        run: bash scripts/tk.sh uninstall
+
+      - name: Database logs
+        if: failure()
+        run: docker compose logs --tail 300
